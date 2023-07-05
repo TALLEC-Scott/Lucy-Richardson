@@ -24,4 +24,26 @@ void DeconvolutionUtils::computeDifference(const bitmap_image& blurredImage, con
             differenceImage.set_pixel(x, y, diffPixel);
         }
     }
+
+}
+
+void DeconvolutionUtils::applyGrayscalePrior(bitmap_image& differenceImage) {
+    for (std::size_t x = 0; x < differenceImage.width(); ++x) {
+        for (std::size_t y = 0; y < differenceImage.height(); ++y) {
+            rgb_t pixel = differenceImage.get_pixel(x, y);
+            unsigned char average = (pixel.red + pixel.green + pixel.blue) / 3;
+            pixel.red = average;
+            pixel.green = average;
+            pixel.blue = average;
+            differenceImage.set_pixel(x, y, pixel);
+        }
+    }
+}
+
+void
+DeconvolutionUtils::computeGrayscaleDifference(const bitmap_image &blurredImage, const bitmap_image &unblurredImage,
+                                               bitmap_image &differenceImage) {
+
+
+
 }

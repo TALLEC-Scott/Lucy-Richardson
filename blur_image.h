@@ -8,6 +8,7 @@
 
 
 
+
 class ImageBlurrer {
 public:
     enum BlurType { GAUSSIAN, BOX, MOTION };
@@ -149,7 +150,6 @@ void ImageBlurrer::addGaussianNoise(double mean, double stddev) {
     }
 }
 
-<<<<<<< HEAD
 void ImageBlurrer::getNeighborhood(std::size_t x, std::size_t y, int size, 
         std::vector<double>& redNeighborhood, std::vector<double>& greenNeighborhood, std::vector<double>& blueNeighborhood) {
     int halfSize = size / 2;

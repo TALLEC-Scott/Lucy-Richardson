@@ -4,3 +4,5 @@ project(Lucy)
 set(CMAKE_CXX_STANDARD 20)
 
 add_executable(Lucy main.cpp DeconvolutionUtils.cc DeconvolutionUtils.hh)
+
+INCLUDE_DIRECTORIES(Include)

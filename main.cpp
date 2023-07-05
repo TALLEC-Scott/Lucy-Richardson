@@ -23,6 +23,7 @@ int main() {
         std::string diffImageFile = "diff_image" + std::to_string(i) + ".bmp";
         blurrer.saveImage(blurredImageFile);
 
+
         // Load the blurred image
         bitmap_image blurredImage(blurredImageFile);
 
@@ -40,7 +41,6 @@ int main() {
         bitmap_image differenceImage;
         DeconvolutionUtils::computeDifference(blurredImage, deconvolver.getImage(), differenceImage);
         differenceImage.save_image(diffImageFile);
-        break;
     }
 
     return 0;
