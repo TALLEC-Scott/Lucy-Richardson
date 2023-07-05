@@ -187,7 +187,6 @@ void ImageBlurrer::denoiseImage(int neighborhoodSize) {
 
     image = denoisedImage;
 }
-=======
 void ImageBlurrer::addSaltAndPepperNoise(double mean, double stddev) {
     std::random_device rd{};
     std::mt19937 gen{rd()};
@@ -219,5 +218,3 @@ void ImageBlurrer::addNoise(double mean, double stddev, NoiseType type) {
             throw std::invalid_argument("Invalid noise type.");
     }
 }
-
->>>>>>> 58aab6bbf77b05e2ba4b485af2914c85df6c0b84

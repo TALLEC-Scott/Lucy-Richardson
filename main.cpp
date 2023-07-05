@@ -1,5 +1,6 @@
 #include "blur_image.h"
 #include "deconvolution.h"
+#include "DeconvolutionUtils.hh"
 #include <cmath>
 #include <limits>
 #include <iostream>
@@ -17,8 +18,9 @@ int main() {
         ImageBlurrer blurrer(blurTypes[i], 3, 3.0, 45.0);
         blurrer.loadImage("image.bmp");
         blurrer.blurImage();
-        blurrer.addNoise(0.0, 10.0);
+        blurrer.addNoise(0.0, 10.0, ImageBlurrer::SALT_AND_PEPPER);
         std::string blurredImageFile = "blurred_image" + std::to_string(i) + ".bmp";
+        std::string diffImageFile = "diff_image" + std::to_string(i) + ".bmp";
         blurrer.saveImage(blurredImageFile);
 
         // Load the blurred image
@@ -33,6 +35,11 @@ int main() {
         deconvolver.deconvolve(3);
         std::string deblurredImageFile = "deblurred_image" + std::to_string(i) + ".bmp";
         deconvolver.saveImage(deblurredImageFile);
+
+        // Compute the difference image
+        bitmap_image differenceImage;
+        DeconvolutionUtils::computeDifference(blurredImage, deconvolver.getImage(), differenceImage);
+        differenceImage.save_image(diffImageFile);
         break;
     }
 

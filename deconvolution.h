@@ -11,6 +11,7 @@ public:
     // Save the image
     void saveImage(const std::string& filePath);
     // Perform deconvolution
+    bitmap_image getImage() { return image; }
     void deconvolve(int iterations);
     // Compute the difference between the original and deconvolved image
 
