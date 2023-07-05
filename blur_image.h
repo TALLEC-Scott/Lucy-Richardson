@@ -1,9 +1,17 @@
 #include "bitmap_image.hpp"
 #include <vector>
+#include "bitmap_image.hpp"
+#include <iostream>
+#include <map>
+#include <random>
+#include <string>
+
+
 
 class ImageBlurrer {
 public:
     enum BlurType { GAUSSIAN, BOX, MOTION };
+    enum NoiseType { SALT_AND_PEPPER, GAUSS};
 
     ImageBlurrer(BlurType type, int kernelSize, double sigma = 0.0, double angle = 0.0);
 
@@ -16,6 +24,8 @@ public:
         std::vector<double>& redNeighborhood, std::vector<double>& greenNeighborhood, std::vector<double>& blueNeighborhood);
     std::vector<std::vector<double>> getKernel() { return kernel; }
 
+    void addNoise(double mean, double stddev, NoiseType type);
+
 private:
     int kernelSize;
     bitmap_image image;
@@ -24,6 +34,11 @@ private:
     void createGaussianKernel(double sigma);
     void createBoxBlurKernel(int size);
     void createMotionBlurKernel(int size, double angle);
+
+    void addGaussianNoise(double mean, double stddev);
+
+    void addSaltAndPepperNoise(double mean, double stddev);
+
 };
 
 ImageBlurrer::ImageBlurrer(BlurType type, int kernelSize, double sigma, double angle) : kernelSize(kernelSize) {
@@ -118,9 +133,7 @@ void ImageBlurrer::blurImage() {
     image = blurredImage;
 }
 
-#include <random>
-
-void ImageBlurrer::addNoise(double mean, double stddev) {
+void ImageBlurrer::addGaussianNoise(double mean, double stddev) {
     std::random_device rd{};
     std::mt19937 gen{rd()};
     std::normal_distribution<> d{mean, stddev};
@@ -136,6 +149,7 @@ void ImageBlurrer::addNoise(double mean, double stddev) {
     }
 }
 
+<<<<<<< HEAD
 void ImageBlurrer::getNeighborhood(std::size_t x, std::size_t y, int size, 
         std::vector<double>& redNeighborhood, std::vector<double>& greenNeighborhood, std::vector<double>& blueNeighborhood) {
     int halfSize = size / 2;
@@ -173,3 +187,37 @@ void ImageBlurrer::denoiseImage(int neighborhoodSize) {
 
     image = denoisedImage;
 }
+=======
+void ImageBlurrer::addSaltAndPepperNoise(double mean, double stddev) {
+    std::random_device rd{};
+    std::mt19937 gen{rd()};
+    std::normal_distribution<> d{mean, stddev};
+
+    for (std::size_t x = 0; x < image.width(); x++) {
+        for (std::size_t y = 0; y < image.height(); y++) {
+            rgb_t color = image.get_pixel(x, y);
+            color.red = std::min(255.0, std::max(0.0, color.red + d(gen)));
+            color.green = std::min(255.0, std::max(0.0, color.green + d(gen)));
+            color.blue = std::min(255.0, std::max(0.0, color.blue + d(gen)));
+            image.set_pixel(x, y, color);
+        }
+    }
+
+}
+
+#include <random>
+
+void ImageBlurrer::addNoise(double mean, double stddev, NoiseType type) {
+
+    switch (type) {
+        case NoiseType::SALT_AND_PEPPER:
+            addSaltAndPepperNoise(mean, stddev);
+            break;
+        case NoiseType::GAUSS:
+            addGaussianNoise(mean, stddev);
+        default:
+            throw std::invalid_argument("Invalid noise type.");
+    }
+}
+
+>>>>>>> 58aab6bbf77b05e2ba4b485af2914c85df6c0b84
