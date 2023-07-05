@@ -11,6 +11,9 @@ public:
     void saveImage(const std::string& filePath);
     void blurImage();
     void addNoise(double mean, double stddev);
+    void denoiseImage(int neighborhoodSize);
+    void getNeighborhood(std::size_t x, std::size_t y, int size, 
+        std::vector<double>& redNeighborhood, std::vector<double>& greenNeighborhood, std::vector<double>& blueNeighborhood);
     std::vector<std::vector<double>> getKernel() { return kernel; }
 
 private:
@@ -133,3 +136,40 @@ void ImageBlurrer::addNoise(double mean, double stddev) {
     }
 }
 
+void ImageBlurrer::getNeighborhood(std::size_t x, std::size_t y, int size, 
+        std::vector<double>& redNeighborhood, std::vector<double>& greenNeighborhood, std::vector<double>& blueNeighborhood) {
+    int halfSize = size / 2;
+    for (int i = -halfSize; i <= halfSize; i++) {
+        for (int j = -halfSize; j <= halfSize; j++) {
+            if (x+i >= 0 && x+i < image.width() && y+j >= 0 && y+j < image.height()) {
+                rgb_t color = image.get_pixel(x+i, y+j);
+                redNeighborhood.push_back(color.red);
+                greenNeighborhood.push_back(color.green);
+                blueNeighborhood.push_back(color.blue);
+            }
+        }
+    }
+}
+
+void ImageBlurrer::denoiseImage(int neighborhoodSize) {
+    bitmap_image denoisedImage(image.width(), image.height());
+
+    for (std::size_t x = 0; x < image.width(); x++) {
+        for (std::size_t y = 0; y < image.height(); y++) {
+            std::vector<double> redNeighborhood, greenNeighborhood, blueNeighborhood;
+            getNeighborhood(x, y, neighborhoodSize, redNeighborhood, greenNeighborhood, blueNeighborhood);
+            
+            std::sort(redNeighborhood.begin(), redNeighborhood.end());
+            std::sort(greenNeighborhood.begin(), greenNeighborhood.end());
+            std::sort(blueNeighborhood.begin(), blueNeighborhood.end());
+
+            rgb_t color;
+            color.red = redNeighborhood[redNeighborhood.size() / 2];
+            color.green = greenNeighborhood[greenNeighborhood.size() / 2];
+            color.blue = blueNeighborhood[blueNeighborhood.size() / 2];
+            denoisedImage.set_pixel(x, y, color);
+        }
+    }
+
+    image = denoisedImage;
+}
