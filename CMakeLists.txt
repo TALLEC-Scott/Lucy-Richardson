@@ -3,4 +3,8 @@ project(Lucy)
 
 set(CMAKE_CXX_STANDARD 20)
 
-add_executable(Lucy main.cpp DeconvolutionUtils.cc DeconvolutionUtils.hh)
+# Include the header files from the Include/ directory
+include_directories(Include)
+
+# Add all your .cc files here
+add_executable(Lucy main.cpp  blur_image.cc DeconvolutionUtils.cc  deconvolution.cc)

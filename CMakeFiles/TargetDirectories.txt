@@ -1,0 +1,3 @@
+/mnt/c/Users/Utilizador/Desktop/TIFO/Lucy/CMakeFiles/Lucy.dir
+/mnt/c/Users/Utilizador/Desktop/TIFO/Lucy/CMakeFiles/edit_cache.dir
+/mnt/c/Users/Utilizador/Desktop/TIFO/Lucy/CMakeFiles/rebuild_cache.dir
