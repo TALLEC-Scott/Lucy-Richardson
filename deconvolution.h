@@ -12,11 +12,14 @@ public:
     void saveImage(const std::string& filePath);
     // Perform deconvolution
     void deconvolve(int iterations);
+    // Compute the difference between the original and deconvolved image
+
 
 private:
     bitmap_image image;
     std::vector<std::vector<double>> kernel;
     std::vector<std::vector<double>> convolve(const std::vector<std::vector<double>>& image, const std::vector<std::vector<double>>& kernel);
+
 };
 
 Deconvolver::Deconvolver(const std::vector<std::vector<double>>& kernel) : kernel(kernel) {}
