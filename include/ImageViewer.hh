@@ -6,6 +6,11 @@
 #include "blur_image.hh"
 
 class ImageViewer {
+    enum class DeconvolutionType {
+        RICHARDSON_LUCY,
+        RICHARDSON_LUCY_TV,
+        RICHARDSON_LUCY_TIKHONOV,
+    };
 public:
     ImageViewer();
     void run(int argc, char* argv[]);
@@ -32,17 +37,20 @@ private:
     std::vector<std::vector<double>> kernel;
     GtkWidget* noiseComboBox;
     GtkWidget* blurComboBox;
+    GtkWidget* deconvolutionComboBox;
 
     static unsigned char *convertToRGBBuffer(const bitmap_image &image);
 
     GtkWidget *image;
     ImageBlurrer::NoiseType noiseType = ImageBlurrer::NOISE_NONE;
+
+    DeconvolutionType deconvolutionType = DeconvolutionType::RICHARDSON_LUCY;
+
     int numberOfIterations = 3;
     bool autoIterations = false;
 
     static void MenuChanged(GtkComboBox *comboBox, gpointer data);
 
-    static void autoConvolution(GtkWidget *widget, gpointer data);
     static void iterationsChanged(GtkRange *range, gpointer data);
 
     static void saveImage(GtkWidget *widget, gpointer data);

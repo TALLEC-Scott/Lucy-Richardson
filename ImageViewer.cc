@@ -42,10 +42,13 @@ void ImageViewer::openImage(GtkWidget* widget, gpointer data) {
         g_free(filename);
     }
     gtk_widget_destroy(dialog);
+    MenuChanged(nullptr, viewer);
+
 }
 void ImageViewer::MenuChanged(GtkComboBox* comboBox, gpointer data) {
 
     ImageViewer* viewer = static_cast<ImageViewer*>(data);
+
     gint active = gtk_combo_box_get_active(comboBox);
     if (comboBox == GTK_COMBO_BOX(viewer->blurComboBox)) {
             if (active == 0) {
@@ -72,13 +75,21 @@ void ImageViewer::MenuChanged(GtkComboBox* comboBox, gpointer data) {
         else if (active == 4)
             viewer->noiseType = ImageBlurrer::SPECKLE;
             // Handle noise combo box
-        } else {
-            // Handle other combo boxes
-        }
+        } else if (comboBox == GTK_COMBO_BOX(viewer->deconvolutionComboBox)) {
+        if (active == 0)
+            viewer->deconvolutionType = DeconvolutionType::RICHARDSON_LUCY;
+        else if (active == 1)
+            viewer->deconvolutionType = DeconvolutionType::RICHARDSON_LUCY_TIKHONOV;
+        else if (active == 2)
+            viewer->deconvolutionType = DeconvolutionType::RICHARDSON_LUCY_TV;
+    }
+    if (viewer->pixbufOriginal == nullptr)
+        return;
+
     // Perform the blur operation with the selected blur type and update the image
     // Here, you can use the viewer->blurType to perform the blur operation or pass it to the ImageBlurrer class
     // After blurring, update the image2 and pixbuf2 with the blurred image data
-    //}
+    //
     ImageBlurrer blurrer(viewer->blurType, 3, 3.0, 45.0);
     blurrer.loadImage(viewer->bitmapImage);
     blurrer.addNoise(0.0, 10.0, viewer->noiseType);
@@ -94,12 +105,18 @@ void ImageViewer::MenuChanged(GtkComboBox* comboBox, gpointer data) {
     gtk_image_set_from_pixbuf(GTK_IMAGE(viewer->imageBlurred), viewer->pixbufBlurred);
 
     auto deconvolver = Deconvolver(viewer->kernel, blurredImageFile);
-    if (viewer->autoIterations)
-        deconvolver.deconvolveAuto(viewer->numberOfIterations, 0.1);
-    else
-        deconvolver.deconvolve(viewer->numberOfIterations);
-        //deconvolver.deconvolveTV(viewer->numberOfIterations, 0.1, 0.001, 1);
-        //Strange results here, I need to check the code
+    switch (viewer->deconvolutionType)
+    {
+        case DeconvolutionType::RICHARDSON_LUCY:
+            deconvolver.deconvolve(viewer->numberOfIterations);
+            break;
+        case DeconvolutionType::RICHARDSON_LUCY_TIKHONOV:
+            deconvolver.deconvolveAuto(viewer->numberOfIterations, 0.1);
+            break;
+        case DeconvolutionType::RICHARDSON_LUCY_TV:
+            deconvolver.deconvolveTV(viewer->numberOfIterations, 0.1, 0.01, 1);
+            break;
+    }
     viewer->deblurredImage = deconvolver.image;
 
     // Create a GdkPixbuf from the restored image
@@ -111,16 +128,16 @@ void ImageViewer::MenuChanged(GtkComboBox* comboBox, gpointer data) {
     //delete[] buffer;
 }
 
-void ImageViewer::autoConvolution(GtkWidget* widget, gpointer data) {
-    ImageViewer* viewer = static_cast<ImageViewer*>(data);
-    viewer->autoIterations = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(widget));
-    // call the callback function from menu change
-    MenuChanged(GTK_COMBO_BOX(viewer->blurComboBox), data);
-}
 void ImageViewer::iterationsChanged(GtkRange* range, gpointer data) {
+
+
     ImageViewer* viewer = static_cast<ImageViewer*>(data);
+
     double value = gtk_range_get_value(range);
     viewer->numberOfIterations = static_cast<int>(value);
+    //check if images are loaded
+    if (viewer->pixbufOriginal == nullptr)
+        return;
     g_idle_add([](gpointer data) {
         ImageViewer* viewer = static_cast<ImageViewer*>(data);
         // call the callback function from menu change
@@ -169,81 +186,89 @@ unsigned char* ImageViewer::convertToRGBBuffer(const bitmap_image& image) {
     return buffer;
 }
 
-    void ImageViewer::activate(GtkApplication* app, gpointer user_data) {
-        ImageViewer* viewer = static_cast<ImageViewer*>(user_data);
-        viewer->window = gtk_application_window_new(app);
-        gtk_window_set_title(GTK_WINDOW(viewer->window), "Image Viewer");
-        gtk_window_set_default_size(GTK_WINDOW(viewer->window), 800, 400);
+void ImageViewer::activate(GtkApplication* app, gpointer user_data) {
+    ImageViewer* viewer = static_cast<ImageViewer*>(user_data);
+    viewer->window = gtk_application_window_new(app);
+    gtk_window_set_title(GTK_WINDOW(viewer->window), "Richardson-Lucy Deconvolution");
+    gtk_window_set_default_size(GTK_WINDOW(viewer->window), 800, 450);
 
-        GtkWidget* box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 10);
-        gtk_container_add(GTK_CONTAINER(viewer->window), box);
+    GtkWidget* box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 10);
+    gtk_container_add(GTK_CONTAINER(viewer->window), box);
 
-        GtkWidget* imageBox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0); // Use horizontal box here
-        GtkWidget* controlBox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
-        gtk_box_pack_start(GTK_BOX(box), imageBox, TRUE, TRUE, 0);
-        gtk_box_pack_start(GTK_BOX(box), controlBox, FALSE, FALSE, 0);
+    GtkWidget* imageBox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0); // Use horizontal box here
+    GtkWidget* controlBox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
+    gtk_box_pack_start(GTK_BOX(box), imageBox, TRUE, TRUE, 0);
+    gtk_box_pack_start(GTK_BOX(box), controlBox, FALSE, FALSE, 0);
 
-        viewer->imageOriginal = gtk_image_new();
-        viewer->imageBlurred = gtk_image_new();
-        viewer->imageDeblurred = gtk_image_new();
-        gtk_box_pack_start(GTK_BOX(imageBox), viewer->imageOriginal, TRUE, TRUE, 0);
-        gtk_box_pack_start(GTK_BOX(imageBox), viewer->imageBlurred, TRUE, TRUE, 0);
-        gtk_box_pack_start(GTK_BOX(imageBox), viewer->imageDeblurred, TRUE, TRUE, 0);
+    viewer->imageOriginal = gtk_image_new();
+    viewer->imageBlurred = gtk_image_new();
+    viewer->imageDeblurred = gtk_image_new();
+    gtk_box_pack_start(GTK_BOX(imageBox), viewer->imageOriginal, TRUE, TRUE, 0);
+    gtk_box_pack_start(GTK_BOX(imageBox), viewer->imageBlurred, TRUE, TRUE, 0);
+    gtk_box_pack_start(GTK_BOX(imageBox), viewer->imageDeblurred, TRUE, TRUE, 0);
 
-        GtkWidget* openButton = gtk_button_new_with_label("Open Image");
-        g_signal_connect(openButton, "clicked", G_CALLBACK(ImageViewer::openImage), viewer);
-        gtk_box_pack_start(GTK_BOX(controlBox), openButton, FALSE, FALSE, 0);
+    GtkWidget* openButton = gtk_button_new_with_label("Open Image");
+    g_signal_connect(openButton, "clicked", G_CALLBACK(ImageViewer::openImage), viewer);
+    gtk_box_pack_start(GTK_BOX(controlBox), openButton, FALSE, FALSE, 0);
+    // Deconvolution menu
+    GtkWidget* deconvolutionLabel = gtk_label_new("Select Deconvolution Method:");
+    gtk_box_pack_start(GTK_BOX(controlBox), deconvolutionLabel, FALSE, FALSE, 0);
 
-        GtkWidget* blurLabel = gtk_label_new("Select Blur Type:");
-        gtk_box_pack_start(GTK_BOX(controlBox), blurLabel, FALSE, FALSE, 0);
+    GtkWidget* deconvolutionComboBox = gtk_combo_box_text_new();
+    viewer->deconvolutionComboBox = deconvolutionComboBox;
+    gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(deconvolutionComboBox), "Richardson-Lucy");
+    gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(deconvolutionComboBox), "Richardson-Lucy with Tikhonov Regularization");
+    gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(deconvolutionComboBox), "Richardson-Lucy with TV Regularization");
+    gtk_combo_box_set_active(GTK_COMBO_BOX(deconvolutionComboBox), 0);
+    g_signal_connect(deconvolutionComboBox, "changed", G_CALLBACK(ImageViewer::MenuChanged), viewer);
+    gtk_box_pack_start(GTK_BOX(controlBox), deconvolutionComboBox, FALSE, FALSE, 0);
 
-        GtkWidget* blurComboBox = gtk_combo_box_text_new();
-        viewer->blurComboBox = blurComboBox;
-        gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(blurComboBox), "Gaussian");
-        gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(blurComboBox), "Box");
-        gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(blurComboBox), "Motion");
-        gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(blurComboBox), "None");
+    //Blur menu
+    GtkWidget* blurLabel = gtk_label_new("Select Blur Type:");
+    gtk_box_pack_start(GTK_BOX(controlBox), blurLabel, FALSE, FALSE, 0);
 
-        gtk_combo_box_set_active(GTK_COMBO_BOX(blurComboBox), 0);
-        g_signal_connect(blurComboBox, "changed", G_CALLBACK(ImageViewer::MenuChanged), viewer);
-        gtk_box_pack_start(GTK_BOX(controlBox), blurComboBox, FALSE, FALSE, 0);
+    GtkWidget* blurComboBox = gtk_combo_box_text_new();
+    viewer->blurComboBox = blurComboBox;
+    gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(blurComboBox), "Gaussian");
+    gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(blurComboBox), "Box");
+    gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(blurComboBox), "Motion");
+    gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(blurComboBox), "None");
 
-        GtkWidget* noiseLabel = gtk_label_new("Select Noise Type:");
-        gtk_box_pack_start(GTK_BOX(controlBox), noiseLabel, FALSE, FALSE, 0);
+    gtk_combo_box_set_active(GTK_COMBO_BOX(blurComboBox), 0);
+    g_signal_connect(blurComboBox, "changed", G_CALLBACK(ImageViewer::MenuChanged), viewer);
+    gtk_box_pack_start(GTK_BOX(controlBox), blurComboBox, FALSE, FALSE, 0);
 
-        GtkWidget* noiseComboBox = gtk_combo_box_text_new();
-        viewer->noiseComboBox = noiseComboBox;
-        gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(noiseComboBox), "None");
-        gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(noiseComboBox), "Gaussian");
-        gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(noiseComboBox), "Salt and Pepper");
-        gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(noiseComboBox), "Poisson");
-        gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(noiseComboBox), "Speckle");
+    GtkWidget* noiseLabel = gtk_label_new("Select Noise Type:");
+    gtk_box_pack_start(GTK_BOX(controlBox), noiseLabel, FALSE, FALSE, 0);
 
+    GtkWidget* noiseComboBox = gtk_combo_box_text_new();
+    viewer->noiseComboBox = noiseComboBox;
+    gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(noiseComboBox), "None");
+    gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(noiseComboBox), "Gaussian");
+    gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(noiseComboBox), "Salt and Pepper");
+    gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(noiseComboBox), "Poisson");
+    gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(noiseComboBox), "Speckle");
 
-        gtk_combo_box_set_active(GTK_COMBO_BOX(noiseComboBox), 0);
-        g_signal_connect(noiseComboBox, "changed", G_CALLBACK(ImageViewer::MenuChanged), viewer);
-        gtk_box_pack_start(GTK_BOX(controlBox), noiseComboBox, FALSE, FALSE, 0);
-
-        // Auto-convolution button
-        GtkWidget* autoConvolutionButton = gtk_toggle_button_new_with_label("Auto Convolution");
-        g_signal_connect(autoConvolutionButton, "toggled", G_CALLBACK(ImageViewer::autoConvolution), viewer);
-        gtk_box_pack_start(GTK_BOX(controlBox), autoConvolutionButton, FALSE, FALSE, 0);
+    gtk_combo_box_set_active(GTK_COMBO_BOX(noiseComboBox), 0);
+    g_signal_connect(noiseComboBox, "changed", G_CALLBACK(ImageViewer::MenuChanged), viewer);
+    gtk_box_pack_start(GTK_BOX(controlBox), noiseComboBox, FALSE, FALSE, 0);
 
 
+    // Iterations slider
+    GtkWidget* sliderLabel = gtk_label_new("Number of Iterations");
+    gtk_box_pack_start(GTK_BOX(controlBox), sliderLabel, FALSE, FALSE, 0);
 
-        // Iterations slider
-        GtkWidget* sliderLabel = gtk_label_new("Number of Iterations");
-        gtk_box_pack_start(GTK_BOX(controlBox), sliderLabel, FALSE, FALSE, 0);
+    GtkWidget* iterationsSlider = gtk_scale_new_with_range(GTK_ORIENTATION_HORIZONTAL, 1, 10, 1);
+    gtk_range_set_value(GTK_RANGE(iterationsSlider), 1);
+    g_signal_connect(iterationsSlider, "value-changed", G_CALLBACK(ImageViewer::iterationsChanged), viewer);
+    gtk_box_pack_start(GTK_BOX(controlBox), iterationsSlider, FALSE, FALSE, 0);
 
-        GtkWidget* iterationsSlider = gtk_scale_new_with_range(GTK_ORIENTATION_HORIZONTAL, 1, 10, 1);
-        gtk_range_set_value(GTK_RANGE(iterationsSlider), 1);
-        g_signal_connect(iterationsSlider, "value-changed", G_CALLBACK(ImageViewer::iterationsChanged), viewer);
-        gtk_box_pack_start(GTK_BOX(controlBox), iterationsSlider, FALSE, FALSE, 0);
+    // Save button
+    GtkWidget* saveButton = gtk_button_new_with_label("Save Image");
+    g_signal_connect(saveButton, "clicked", G_CALLBACK(ImageViewer::saveImage), viewer);
+    gtk_box_pack_start(GTK_BOX(controlBox), saveButton, FALSE, FALSE, 0);
 
-        // Save button
-        GtkWidget* saveButton = gtk_button_new_with_label("Save Image");
-        g_signal_connect(saveButton, "clicked", G_CALLBACK(ImageViewer::saveImage), viewer);
-        gtk_box_pack_start(GTK_BOX(controlBox), saveButton, FALSE, FALSE, 0);
 
-        gtk_widget_show_all(viewer->window);
-    }
+
+    gtk_widget_show_all(viewer->window);
+}
