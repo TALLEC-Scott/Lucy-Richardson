@@ -1,5 +1,5 @@
-#include "blur_image.h"
-#include "deconvolution.h"
+#include "blur_image.hh"
+#include "deconvolution.hh"
 #include "DeconvolutionUtils.hh"
 #include <cmath>
 #include <limits>
