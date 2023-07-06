@@ -22,6 +22,7 @@ public:
     // Perform deconvolution
     bitmap_image getImage() { return image; }
     void deconvolve(int iterations);
+    void Deconvolver::deconvolveAuto(int iterations, double lambda);
     // Compute the difference between the original and deconvolved image
 
     bitmap_image image;
