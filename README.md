@@ -1,8 +1,23 @@
 # Lucy-Richardson deconvolution algorithm in C++
 
+### Description
 This is a simple project that demonstrates the Lucy-Richardson deconvolution algorithm. The project is an interface with
 which you can apply many different kinds of blurs and noises and then apply the Lucy-Richardson deconvolution algorithm to
 restore the original image. The project is written in C++ and uses GTK+3 for the GUI.
+
+### Features
+- Apply Blur
+    - Gaussian Blur
+    - Motion Blur
+- Apply Noise
+    - Gaussian Noise
+    - Salt and Pepper Noise
+    - Shot Noise
+    - Speckle Noise
+- Apply Lucy-Richardson Deconvolution Algorithm
+    - Number of iterations
+    - Tikhonov regularization or *auto-deconvolution*
+- Save Image
 
 ### Requirements
 
