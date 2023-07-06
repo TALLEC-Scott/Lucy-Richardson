@@ -21,7 +21,7 @@ make
 ./lucy
 ```
 
-### Results
+### Examples
 
 The original image is shown below.
 
@@ -34,6 +34,12 @@ The blurred image is shown below.
 The restored image is shown below.
 
 ![Restored Image](./examples/airplane_deblurred.bmp)
+
+### Screenshots
+
+The main interface is shown below.
+
+![Main Interface](./screenshots/GUI_screenshot.png)
 
 ### Authors
 - [Scott TALLEC](https://github.com/TALLEC-Scott)
