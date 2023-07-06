@@ -7,7 +7,7 @@
 
 int main() {
     // Load an image
-    bitmap_image originalImage("image.bmp");
+    bitmap_image originalImage("resources/image.bmp");
 
     // Define blur types
     ImageBlurrer::BlurType blurTypes[3] = {ImageBlurrer::GAUSSIAN, ImageBlurrer::BOX, ImageBlurrer::MOTION};
@@ -16,11 +16,11 @@ int main() {
     for(int i=0; i<3; i++) {
         // Blur an image
         ImageBlurrer blurrer(blurTypes[i], 3, 3.0, 45.0);
-        blurrer.loadImage("image.bmp");
+        blurrer.loadImage("resources/image.bmp");
         blurrer.blurImage();
         blurrer.addNoise(0.0, 10.0, ImageBlurrer::SALT_AND_PEPPER);
-        std::string blurredImageFile = "blurred_image" + std::to_string(i) + ".bmp";
-        std::string diffImageFile = "diff_image" + std::to_string(i) + ".bmp";
+        std::string blurredImageFile = "results/blurred_image" + std::to_string(i) + ".bmp";
+        std::string diffImageFile = "results/diff_image" + std::to_string(i) + ".bmp";
         blurrer.saveImage(blurredImageFile);
 
 
@@ -34,7 +34,7 @@ int main() {
         Deconvolver deconvolver(kernel);
         deconvolver.loadImage(blurredImageFile);
         deconvolver.deconvolve(3);
-        std::string deblurredImageFile = "deblurred_image" + std::to_string(i) + ".bmp";
+        std::string deblurredImageFile = "results/deblurred_image" + std::to_string(i) + ".bmp";
         deconvolver.saveImage(deblurredImageFile);
 
         // Compute the difference image
