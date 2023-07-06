@@ -57,6 +57,7 @@ void ImageViewer::openImage(GtkWidget* widget, gpointer data) {
             blurrer.blurImage();
             blurrer.addNoise(0.0, 10.0, ImageBlurrer::SALT_AND_PEPPER);
             char* blurredImageFile = "results/blurred_image.bmp";
+            //std::ofstream file(blurredImageFile);  // Create a file named "example.txt"
             blurrer.saveImage(blurredImageFile);
             viewer->kernel = blurrer.getKernel();
             viewer->pixbuf1 = gdk_pixbuf_new_from_file(blurredImageFile, nullptr);
@@ -112,7 +113,7 @@ void ImageViewer::blurTypeChanged(GtkComboBox* comboBox, gpointer data) {
                                                  restoredImage.height(), restoredImage.width() *3, nullptr, nullptr);
     viewer->pixbuf2 = pixbuf;
     gtk_image_set_from_pixbuf(GTK_IMAGE(viewer->image2), viewer->pixbuf2);
-    delete[] buffer;
+    //delete[] buffer;
 }
 
 unsigned char* ImageViewer::convertToRGBBuffer(const bitmap_image& image) {
