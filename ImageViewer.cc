@@ -55,15 +55,22 @@ void ImageViewer::MenuChanged(GtkComboBox* comboBox, gpointer data) {
             } else if (active == 2) {
                 viewer->blurType = ImageBlurrer::MOTION;
             }
-            // Handle blur combo box
-        } else if (comboBox == GTK_COMBO_BOX(viewer->noiseComboBox))  {
-            if (active == 0) {
-                viewer->noiseType = ImageBlurrer::NONE;
-            } else if (active == 1) {
-                viewer->noiseType = ImageBlurrer::GAUSS;
-            } else if (active == 2) {
-                viewer->noiseType = ImageBlurrer::SALT_AND_PEPPER;
+            else if (active == 3)
+            {
+                viewer->blurType = ImageBlurrer::BLUR_NONE;
             }
+            // Handle blur combo box
+        } else if (comboBox == GTK_COMBO_BOX(viewer->noiseComboBox)) {
+        if (active == 0)
+            viewer->noiseType = ImageBlurrer::NOISE_NONE;
+        else if (active == 1)
+            viewer->noiseType = ImageBlurrer::GAUSS;
+        else if (active == 2)
+            viewer->noiseType = ImageBlurrer::SALT_AND_PEPPER;
+        else if (active == 3)
+            viewer->noiseType = ImageBlurrer::POISSON;
+        else if (active == 4)
+            viewer->noiseType = ImageBlurrer::SPECKLE;
             // Handle noise combo box
         } else {
             // Handle other combo boxes
@@ -174,6 +181,8 @@ unsigned char* ImageViewer::convertToRGBBuffer(const bitmap_image& image) {
         gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(blurComboBox), "Gaussian");
         gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(blurComboBox), "Box");
         gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(blurComboBox), "Motion");
+        gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(blurComboBox), "None");
+
         gtk_combo_box_set_active(GTK_COMBO_BOX(blurComboBox), 0);
         g_signal_connect(blurComboBox, "changed", G_CALLBACK(ImageViewer::MenuChanged), viewer);
         gtk_box_pack_start(GTK_BOX(controlBox), blurComboBox, FALSE, FALSE, 0);
@@ -186,6 +195,10 @@ unsigned char* ImageViewer::convertToRGBBuffer(const bitmap_image& image) {
         gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(noiseComboBox), "None");
         gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(noiseComboBox), "Gaussian");
         gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(noiseComboBox), "Salt and Pepper");
+        gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(noiseComboBox), "Poisson");
+        gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(noiseComboBox), "Speckle");
+
+
         gtk_combo_box_set_active(GTK_COMBO_BOX(noiseComboBox), 0);
         g_signal_connect(noiseComboBox, "changed", G_CALLBACK(ImageViewer::MenuChanged), viewer);
         gtk_box_pack_start(GTK_BOX(controlBox), noiseComboBox, FALSE, FALSE, 0);

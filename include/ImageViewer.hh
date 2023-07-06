@@ -34,7 +34,7 @@ private:
     static unsigned char *convertToRGBBuffer(const bitmap_image &image);
 
     GtkWidget *image;
-    ImageBlurrer::NoiseType noiseType = ImageBlurrer::NONE;
+    ImageBlurrer::NoiseType noiseType = ImageBlurrer::NOISE_NONE;
     int numberOfIterations = 3;
     bool autoIterations = false;
 

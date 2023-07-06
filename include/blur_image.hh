@@ -12,8 +12,8 @@
 
 class ImageBlurrer {
 public:
-    enum BlurType { GAUSSIAN, BOX, MOTION };
-    enum NoiseType { SALT_AND_PEPPER, GAUSS, NONE};
+    enum BlurType { GAUSSIAN, BOX, MOTION, BLUR_NONE};
+    enum NoiseType { SALT_AND_PEPPER, GAUSS, POISSON, SPECKLE, NOISE_NONE};
 
     ImageBlurrer(BlurType type, int kernelSize, double sigma = 0.0, double angle = 0.0);
 
@@ -42,6 +42,13 @@ private:
 
     void addSaltAndPepperNoise(double mean, double stddev);
 
+    void addPoissonNoise();
+
+    int addPoissonNoiseToChannel(int value, std::mt19937 &gen);
+
+    void addSpeckleNoise(double stddev);
+
+    void createIdentityKernel(int kernelSize);
 };
 
 

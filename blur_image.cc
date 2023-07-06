@@ -11,6 +11,9 @@ ImageBlurrer::ImageBlurrer(BlurType type, int kernelSize, double sigma, double a
         case BlurType::MOTION:
             createMotionBlurKernel(kernelSize, angle);
             break;
+        case BlurType::BLUR_NONE:
+            createIdentityKernel(kernelSize);
+            break;
         default:
             throw std::invalid_argument("Invalid blur type.");
     }
@@ -25,6 +28,11 @@ void ImageBlurrer::loadImage(const std::string& filePath) {
 
 void ImageBlurrer::saveImage(const std::string& filePath) {
     image.save_image(filePath);
+}
+void ImageBlurrer::createIdentityKernel(int kernelSize) {
+    kernel = std::vector<std::vector<double>>(kernelSize, std::vector<double>(kernelSize, 0.0));
+    int center = kernelSize / 2;
+    kernel[center][center] = 1.0;
 }
 
 void ImageBlurrer::createGaussianKernel(double sigma) {
@@ -94,21 +102,7 @@ void ImageBlurrer::blurImage() {
     image = blurredImage;
 }
 
-void ImageBlurrer::addGaussianNoise(double mean, double stddev) {
-    std::random_device rd{};
-    std::mt19937 gen{rd()};
-    std::normal_distribution<> d{mean, stddev};
 
-    for (std::size_t x = 0; x < image.width(); x++) {
-        for (std::size_t y = 0; y < image.height(); y++) {
-            rgb_t color = image.get_pixel(x, y);
-            color.red = std::min(255.0, std::max(0.0, color.red + d(gen)));
-            color.green = std::min(255.0, std::max(0.0, color.green + d(gen)));
-            color.blue = std::min(255.0, std::max(0.0, color.blue + d(gen)));
-            image.set_pixel(x, y, color);
-        }
-    }
-}
 
 
 void ImageBlurrer::getNeighborhood(std::size_t x, std::size_t y, int size, 
@@ -148,7 +142,8 @@ void ImageBlurrer::denoiseImage(int neighborhoodSize) {
 
     image = denoisedImage;
 }
-void ImageBlurrer::addSaltAndPepperNoise(double mean, double stddev) {
+
+void ImageBlurrer::addGaussianNoise(double mean, double stddev) {
     std::random_device rd{};
     std::mt19937 gen{rd()};
     std::normal_distribution<> d{mean, stddev};
@@ -162,7 +157,70 @@ void ImageBlurrer::addSaltAndPepperNoise(double mean, double stddev) {
             image.set_pixel(x, y, color);
         }
     }
+}
 
+void ImageBlurrer::addSaltAndPepperNoise(double saltProb, double pepperProb) {
+    std::random_device rd{};
+    std::mt19937 gen{rd()};
+    std::uniform_real_distribution<> dis(0.0, 1.0);
+
+    for (std::size_t x = 0; x < image.width(); x++) {
+        for (std::size_t y = 0; y < image.height(); y++) {
+            double randVal = dis(gen);
+            rgb_t color = image.get_pixel(x, y);
+
+            if (randVal < saltProb) {
+                // Add salt noise
+                color.red = 255;
+                color.green = 255;
+                color.blue = 255;
+            } else if (randVal > 1.0 - pepperProb) {
+                // Add pepper noise
+                color.red = 0;
+                color.green = 0;
+                color.blue = 0;
+            }
+
+            image.set_pixel(x, y, color);
+        }
+    }
+}
+void ImageBlurrer::addSpeckleNoise(double stddev) {
+    std::random_device rd{};
+    std::mt19937 gen{rd()};
+    std::normal_distribution<> d{0.0, stddev};
+
+    for (std::size_t x = 0; x < image.width(); x++) {
+        for (std::size_t y = 0; y < image.height(); y++) {
+            rgb_t color = image.get_pixel(x, y);
+            double noise = d(gen);
+            color.red = std::min(255.0, std::max(0.0, color.red + color.red * noise));
+            color.green = std::min(255.0, std::max(0.0, color.green + color.green * noise));
+            color.blue = std::min(255.0, std::max(0.0, color.blue + color.blue * noise));
+            image.set_pixel(x, y, color);
+        }
+    }
+}
+
+void ImageBlurrer::addPoissonNoise() {
+    std::random_device rd{};
+    std::mt19937 gen{rd()};
+
+    for (std::size_t x = 0; x < image.width(); x++) {
+        for (std::size_t y = 0; y < image.height(); y++) {
+            rgb_t color = image.get_pixel(x, y);
+            color.red = addPoissonNoiseToChannel(color.red, gen);
+            color.green = addPoissonNoiseToChannel(color.green, gen);
+            color.blue = addPoissonNoiseToChannel(color.blue, gen);
+            image.set_pixel(x, y, color);
+        }
+    }
+}
+
+int ImageBlurrer::addPoissonNoiseToChannel(int value, std::mt19937& gen) {
+    std::poisson_distribution<> d{static_cast<double>(value)};
+    int noise = d(gen);
+    return std::min(255, value + noise);
 }
 
 #include <random>
@@ -171,12 +229,19 @@ void ImageBlurrer::addNoise(double mean, double stddev, NoiseType type) {
 
     switch (type) {
         case NoiseType::SALT_AND_PEPPER:
-            addSaltAndPepperNoise(mean, stddev);
+            addSaltAndPepperNoise(0.03, 0.03);
             break;
         case NoiseType::GAUSS:
             addGaussianNoise(mean, stddev);
             break;
-        case NoiseType::NONE:
+        case NoiseType::SPECKLE:
+            addSpeckleNoise(stddev);
+            break;
+        case NoiseType::POISSON:
+            addPoissonNoise();
+            break;
+
+        case NoiseType::NOISE_NONE:
             break;
         default:
             throw std::invalid_argument("Invalid noise type.");
