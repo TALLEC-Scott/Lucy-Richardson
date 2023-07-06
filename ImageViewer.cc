@@ -95,7 +95,7 @@ void ImageViewer::MenuChanged(GtkComboBox* comboBox, gpointer data) {
 
     auto deconvolver = Deconvolver(viewer->kernel, blurredImageFile);
     if (viewer->autoIterations)
-        deconvolver.deconvolveAuto(viewer->autoIterations, 0.001);
+        deconvolver.deconvolveAuto(viewer->numberOfIterations, 0.1);
     else
         deconvolver.deconvolve(viewer->numberOfIterations);
     viewer->deblurredImage = deconvolver.image;
