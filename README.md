@@ -28,10 +28,12 @@ The original image is shown below.
 ![Original Image](./resources/airplane.bmp)
 
 The blurred image is shown below.
+
 ![Blurred Image](./examples/airplane_blurred.bmp)
 
 The restored image is shown below.
-![Restored Image](./examples/airplane_restored.bmp)
+
+![Restored Image](./examples/airplane_deblurred.bmp)
 
 ### Authors
 - [Scott TALLEC](https://github.com/TALLEC-Scott)
