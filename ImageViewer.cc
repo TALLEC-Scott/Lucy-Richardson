@@ -88,7 +88,7 @@ void ImageViewer::MenuChanged(GtkComboBox* comboBox, gpointer data) {
 
     auto deconvolver = Deconvolver(viewer->kernel, blurredImageFile);
     if (viewer->autoIterations)
-        deconvolver.deconvolveAuto(viewer->autoIterations, 0.05);
+        deconvolver.deconvolveAuto(viewer->autoIterations, 0.001);
     else
         deconvolver.deconvolve(viewer->numberOfIterations);
     bitmap_image restoredImage = deconvolver.image;
@@ -150,7 +150,7 @@ unsigned char* ImageViewer::convertToRGBBuffer(const bitmap_image& image) {
         GtkWidget* box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 10);
         gtk_container_add(GTK_CONTAINER(viewer->window), box);
 
-        GtkWidget* imageBox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+        GtkWidget* imageBox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0); // Use horizontal box here
         GtkWidget* controlBox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
         gtk_box_pack_start(GTK_BOX(box), imageBox, TRUE, TRUE, 0);
         gtk_box_pack_start(GTK_BOX(box), controlBox, FALSE, FALSE, 0);
