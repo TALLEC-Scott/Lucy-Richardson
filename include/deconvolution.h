@@ -1,4 +1,4 @@
-#include "bitmap_image.hpp"
+#include "../bitmap_image.hpp"
 #include <vector>
 #include <cmath>
 
