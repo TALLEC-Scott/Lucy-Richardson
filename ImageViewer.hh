@@ -25,7 +25,7 @@ private:
     GdkPixbuf* pixbufBlurred;    // Pixbuf for the blurred image
     GdkPixbuf* pixbufDeblurred;  // Pixbuf for the deblurred image
     std::string imagePath;
-    ImageBlurrer::BlurType blurType;
+    ImageBlurrer::BlurType blurType = ImageBlurrer::GAUSSIAN;
     bitmap_image bitmapImage;
     std::vector<std::vector<double>> kernel;
     GtkWidget* noiseComboBox;
@@ -34,10 +34,14 @@ private:
     static unsigned char *convertToRGBBuffer(const bitmap_image &image);
 
     GtkWidget *image;
-    ImageBlurrer::NoiseType noiseType;
+    ImageBlurrer::NoiseType noiseType = ImageBlurrer::NONE;
+    int numberOfIterations = 3;
+    bool autoIterations = false;
 
     static void MenuChanged(GtkComboBox *comboBox, gpointer data);
 
+    static void autoConvolution(GtkWidget *widget, gpointer data);
+    static void iterationsChanged(GtkRange *range, gpointer data);
 };
 
 #endif  // IMAGE_VIEWER_H

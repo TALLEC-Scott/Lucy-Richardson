@@ -59,11 +59,11 @@ void ImageViewer::MenuChanged(GtkComboBox* comboBox, gpointer data) {
             // Handle blur combo box
         } else if (comboBox == GTK_COMBO_BOX(viewer->noiseComboBox))  {
             if (active == 0) {
-                viewer->noiseType = ImageBlurrer::GAUSS;
-            } else if (active == 1) {
-                viewer->noiseType = ImageBlurrer::SALT_AND_PEPPER;
-            } else if (active == 2) {
                 viewer->noiseType = ImageBlurrer::NONE;
+            } else if (active == 1) {
+                viewer->noiseType = ImageBlurrer::GAUSS;
+            } else if (active == 2) {
+                viewer->noiseType = ImageBlurrer::SALT_AND_PEPPER;
             }
             // Handle noise combo box
         } else {
@@ -75,7 +75,7 @@ void ImageViewer::MenuChanged(GtkComboBox* comboBox, gpointer data) {
     //}
     ImageBlurrer blurrer(viewer->blurType, 3, 3.0, 45.0);
     blurrer.loadImage(viewer->bitmapImage);
-    blurrer.addNoise(0.0, 10.0, ImageBlurrer::SALT_AND_PEPPER);
+    blurrer.addNoise(0.0, 10.0, viewer->noiseType);
 
     blurrer.blurImage();
     char* blurredImageFile = "results/blurred_image.bmp";
@@ -88,7 +88,10 @@ void ImageViewer::MenuChanged(GtkComboBox* comboBox, gpointer data) {
     gtk_image_set_from_pixbuf(GTK_IMAGE(viewer->imageBlurred), viewer->pixbufBlurred);
 
     auto deconvolver = Deconvolver(viewer->kernel, blurredImageFile);
-    deconvolver.deconvolve(3);
+    if (viewer->autoIterations)
+        deconvolver.deconvolveAuto(viewer->autoIterations, 0.05);
+    else
+        deconvolver.deconvolve(viewer->numberOfIterations);
     bitmap_image restoredImage = deconvolver.image;
 
     // Create a GdkPixbuf from the restored image
@@ -98,6 +101,21 @@ void ImageViewer::MenuChanged(GtkComboBox* comboBox, gpointer data) {
     viewer->pixbufDeblurred = pixbuf;
     gtk_image_set_from_pixbuf(GTK_IMAGE(viewer->imageDeblurred), viewer->pixbufDeblurred);
     //delete[] buffer;
+}
+
+void ImageViewer::autoConvolution(GtkWidget* widget, gpointer data) {
+    ImageViewer* viewer = static_cast<ImageViewer*>(data);
+    viewer->autoIterations = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(widget));
+    // call the callback function from menu change
+    MenuChanged(GTK_COMBO_BOX(viewer->blurComboBox), data);
+}
+
+void ImageViewer::iterationsChanged(GtkRange* range, gpointer data) {
+    ImageViewer* viewer = static_cast<ImageViewer*>(data);
+    int value = static_cast<int>(gtk_range_get_value(range));
+    viewer->numberOfIterations = value;
+    // call the callback function from menu change
+    MenuChanged(GTK_COMBO_BOX(viewer->blurComboBox), data);
 }
 
 unsigned char* ImageViewer::convertToRGBBuffer(const bitmap_image& image) {
@@ -168,6 +186,23 @@ unsigned char* ImageViewer::convertToRGBBuffer(const bitmap_image& image) {
         gtk_combo_box_set_active(GTK_COMBO_BOX(noiseComboBox), 0);
         g_signal_connect(noiseComboBox, "changed", G_CALLBACK(ImageViewer::MenuChanged), viewer);
         gtk_box_pack_start(GTK_BOX(controlBox), noiseComboBox, FALSE, FALSE, 0);
+
+        // Auto-convolution button
+        GtkWidget* autoConvolutionButton = gtk_toggle_button_new_with_label("Auto Convolution");
+        g_signal_connect(autoConvolutionButton, "toggled", G_CALLBACK(ImageViewer::autoConvolution), viewer);
+        gtk_box_pack_start(GTK_BOX(controlBox), autoConvolutionButton, FALSE, FALSE, 0);
+
+
+
+        // Iterations slider
+        GtkWidget* sliderLabel = gtk_label_new("Number of Iterations");
+        gtk_box_pack_start(GTK_BOX(controlBox), sliderLabel, FALSE, FALSE, 0);
+
+        GtkWidget* iterationsSlider = gtk_scale_new_with_range(GTK_ORIENTATION_HORIZONTAL, 1, 10, 1);
+        gtk_range_set_value(GTK_RANGE(iterationsSlider), 1);
+        g_signal_connect(iterationsSlider, "value-changed", G_CALLBACK(ImageViewer::iterationsChanged), viewer);
+        gtk_box_pack_start(GTK_BOX(controlBox), iterationsSlider, FALSE, FALSE, 0);
+
 
         gtk_widget_show_all(viewer->window);
     }
