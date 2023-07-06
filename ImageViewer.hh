@@ -17,17 +17,26 @@ private:
     static void activate(GtkApplication* app, gpointer user_data);
 
     GtkWidget* window;
-    GtkWidget* image1;
-    GtkWidget* image2;
-    GdkPixbuf* pixbuf1;
-    GdkPixbuf* pixbuf2;
+    GtkWidget* imageOriginal;    // Widget to display the original image
+    GtkWidget* imageBlurred;     // Widget to display the blurred image
+    GtkWidget* imageDeblurred;   // Widget to display the deblurred image
+
+    GdkPixbuf* pixbufOriginal;   // Pixbuf for the original image
+    GdkPixbuf* pixbufBlurred;    // Pixbuf for the blurred image
+    GdkPixbuf* pixbufDeblurred;  // Pixbuf for the deblurred image
     std::string imagePath;
     ImageBlurrer::BlurType blurType;
     bitmap_image bitmapImage;
     std::vector<std::vector<double>> kernel;
-
+    GtkWidget* noiseComboBox;
+    GtkWidget* blurComboBox;
 
     static unsigned char *convertToRGBBuffer(const bitmap_image &image);
+
+    GtkWidget *image;
+    ImageBlurrer::NoiseType noiseType;
+
+    static void MenuChanged(GtkComboBox *comboBox, gpointer data);
 
 };
 

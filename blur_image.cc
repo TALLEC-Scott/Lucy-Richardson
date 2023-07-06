@@ -175,6 +175,9 @@ void ImageBlurrer::addNoise(double mean, double stddev, NoiseType type) {
             break;
         case NoiseType::GAUSS:
             addGaussianNoise(mean, stddev);
+            break;
+        case NoiseType::NONE:
+            break;
         default:
             throw std::invalid_argument("Invalid noise type.");
     }

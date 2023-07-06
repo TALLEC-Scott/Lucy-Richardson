@@ -2,7 +2,8 @@
 #include "deconvolution.hh"
 #include "blur_image.hh"
 
-ImageViewer::ImageViewer() : window(nullptr), image1(nullptr), image2(nullptr), pixbuf1(nullptr), pixbuf2(nullptr) {}
+ImageViewer::ImageViewer() : window(nullptr), imageOriginal(nullptr), imageBlurred(nullptr), imageDeblurred(nullptr),
+pixbufOriginal(nullptr), pixbufDeblurred(nullptr), pixbufBlurred(nullptr) {}
 
 void ImageViewer::run(int argc, char* argv[]) {
     GtkApplication* app = gtk_application_new("com.example.image_viewer", G_APPLICATION_FLAGS_NONE);
@@ -12,96 +13,79 @@ void ImageViewer::run(int argc, char* argv[]) {
 }
 
 void ImageViewer::openImage(GtkWidget* widget, gpointer data) {
-    ImageViewer* viewer = static_cast<ImageViewer*>(data);
-    GtkWidget* dialog = gtk_file_chooser_dialog_new("Open Image", GTK_WINDOW(viewer->window),
+    ImageViewer *viewer = static_cast<ImageViewer *>(data);
+    GtkWidget *dialog = gtk_file_chooser_dialog_new("Open Image", GTK_WINDOW(viewer->window),
                                                     GTK_FILE_CHOOSER_ACTION_OPEN,
                                                     "_Cancel", GTK_RESPONSE_CANCEL,
                                                     "_Open", GTK_RESPONSE_ACCEPT, nullptr);
 
     if (gtk_dialog_run(GTK_DIALOG(dialog)) == GTK_RESPONSE_ACCEPT) {
-        char* filename = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(dialog));
+        char *filename = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(dialog));
         viewer->bitmapImage = bitmap_image(filename);
         if (viewer->bitmapImage.data()) {
-            GtkWidget* dialogBox = gtk_dialog_new_with_buttons("Select Blur Type", GTK_WINDOW(viewer->window),
-                                                               GTK_DIALOG_MODAL,
-                                                               "_Cancel", GTK_RESPONSE_CANCEL,
-                                                               "_OK", GTK_RESPONSE_OK, nullptr);
-            GtkWidget* contentArea = gtk_dialog_get_content_area(GTK_DIALOG(dialogBox));
-
-            GtkWidget* label = gtk_label_new("Select Blur Type:");
-            gtk_box_pack_start(GTK_BOX(contentArea), label, FALSE, FALSE, 0);
-
-            GtkWidget* comboBox = gtk_combo_box_text_new();
-            gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(comboBox), "Gaussian");
-            gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(comboBox), "Box");
-            gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(comboBox), "Motion");
-            gtk_combo_box_set_active(GTK_COMBO_BOX(comboBox), 0);
-            gtk_box_pack_start(GTK_BOX(contentArea), comboBox, FALSE, FALSE, 0);
-
-            gtk_widget_show_all(dialogBox);
-            if (gtk_dialog_run(GTK_DIALOG(dialogBox)) == GTK_RESPONSE_OK) {
-                gint active = gtk_combo_box_get_active(GTK_COMBO_BOX(comboBox));
-                if (active == 0) {
-                    viewer->blurType = ImageBlurrer::GAUSSIAN;
-                } else if (active == 1) {
-                    viewer->blurType = ImageBlurrer::BOX;
-                } else if (active == 2) {
-                    viewer->blurType = ImageBlurrer::MOTION;
-                }
-            }
-            gtk_widget_destroy(dialogBox);
-
-            //int iterations = 50;  // Number of deconvolution iterations
-            ImageBlurrer blurrer(viewer->blurType, 3, 3.0, 45.0);
-            blurrer.loadImage(filename);
-            blurrer.blurImage();
-            blurrer.addNoise(0.0, 10.0, ImageBlurrer::SALT_AND_PEPPER);
-            char* blurredImageFile = "results/blurred_image.bmp";
-            //std::ofstream file(blurredImageFile);  // Create a file named "example.txt"
-            blurrer.saveImage(blurredImageFile);
-            viewer->kernel = blurrer.getKernel();
-            viewer->pixbuf1 = gdk_pixbuf_new_from_file(blurredImageFile, nullptr);
-            gtk_image_set_from_pixbuf(GTK_IMAGE(viewer->image1), viewer->pixbuf1);
+// Create a GdkPixbuf from the image
+            unsigned char *buffer = convertToRGBBuffer(viewer->bitmapImage);
+            GdkPixbuf *pixbuf = gdk_pixbuf_new_from_data(buffer, GDK_COLORSPACE_RGB, FALSE, 8,
+                                                         viewer->bitmapImage.width(),
+                                                         viewer->bitmapImage.height(), viewer->bitmapImage.width() * 3,
+                                                         nullptr, nullptr);
+            viewer->pixbufOriginal = pixbuf;
+            gtk_image_set_from_pixbuf(GTK_IMAGE(viewer->imageOriginal), viewer->pixbufOriginal);
+            //delete[] buffer;
         } else {
-            GtkWidget* errorDialog = gtk_message_dialog_new(GTK_WINDOW(dialog), GTK_DIALOG_MODAL,
+            GtkWidget *errorDialog = gtk_message_dialog_new(GTK_WINDOW(dialog), GTK_DIALOG_MODAL,
                                                             GTK_MESSAGE_ERROR, GTK_BUTTONS_OK,
                                                             "Failed to open image!");
             gtk_dialog_run(GTK_DIALOG(errorDialog));
             gtk_widget_destroy(errorDialog);
         }
-       // g_free(filename);
+        g_free(filename);
     }
     gtk_widget_destroy(dialog);
 }
+void ImageViewer::MenuChanged(GtkComboBox* comboBox, gpointer data) {
 
-void ImageViewer::blurTypeChanged(GtkComboBox* comboBox, gpointer data) {
     ImageViewer* viewer = static_cast<ImageViewer*>(data);
     gint active = gtk_combo_box_get_active(comboBox);
-    if (active == 0) {
-        viewer->blurType = ImageBlurrer::GAUSSIAN;
-    } else if (active == 1) {
-        viewer->blurType = ImageBlurrer::BOX;
-    } else if (active == 2) {
-        viewer->blurType = ImageBlurrer::MOTION;
-    }
-
+    const gchar* activeId = gtk_combo_box_get_active_id(GTK_COMBO_BOX(comboBox));
+    if (comboBox == GTK_COMBO_BOX(viewer->blurComboBox)) {
+            if (active == 0) {
+                viewer->blurType = ImageBlurrer::GAUSSIAN;
+            } else if (active == 1) {
+                viewer->blurType = ImageBlurrer::BOX;
+            } else if (active == 2) {
+                viewer->blurType = ImageBlurrer::MOTION;
+            }
+            // Handle blur combo box
+        } else if (comboBox == GTK_COMBO_BOX(viewer->noiseComboBox))  {
+            if (active == 0) {
+                viewer->noiseType = ImageBlurrer::GAUSS;
+            } else if (active == 1) {
+                viewer->noiseType = ImageBlurrer::SALT_AND_PEPPER;
+            } else if (active == 2) {
+                viewer->noiseType = ImageBlurrer::NONE;
+            }
+            // Handle noise combo box
+        } else {
+            // Handle other combo boxes
+        }
     // Perform the blur operation with the selected blur type and update the image
     // Here, you can use the viewer->blurType to perform the blur operation or pass it to the ImageBlurrer class
     // After blurring, update the image2 and pixbuf2 with the blurred image data
     //}
     ImageBlurrer blurrer(viewer->blurType, 3, 3.0, 45.0);
     blurrer.loadImage(viewer->bitmapImage);
+    blurrer.addNoise(0.0, 10.0, ImageBlurrer::SALT_AND_PEPPER);
 
     blurrer.blurImage();
-    blurrer.addNoise(0.0, 10.0, ImageBlurrer::SALT_AND_PEPPER);
     char* blurredImageFile = "results/blurred_image.bmp";
 
     blurrer.saveImage(blurredImageFile);
     viewer->kernel = blurrer.getKernel();
 
 
-    viewer->pixbuf1 = gdk_pixbuf_new_from_file(blurredImageFile, nullptr);
-    gtk_image_set_from_pixbuf(GTK_IMAGE(viewer->image1), viewer->pixbuf1);
+    viewer->pixbufBlurred = gdk_pixbuf_new_from_file(blurredImageFile, nullptr);
+    gtk_image_set_from_pixbuf(GTK_IMAGE(viewer->imageBlurred), viewer->pixbufBlurred);
 
     auto deconvolver = Deconvolver(viewer->kernel, blurredImageFile);
     deconvolver.deconvolve(3);
@@ -111,8 +95,8 @@ void ImageViewer::blurTypeChanged(GtkComboBox* comboBox, gpointer data) {
     unsigned char* buffer = convertToRGBBuffer(restoredImage);
     GdkPixbuf* pixbuf = gdk_pixbuf_new_from_data(buffer, GDK_COLORSPACE_RGB, FALSE, 8, restoredImage.width(),
                                                  restoredImage.height(), restoredImage.width() *3, nullptr, nullptr);
-    viewer->pixbuf2 = pixbuf;
-    gtk_image_set_from_pixbuf(GTK_IMAGE(viewer->image2), viewer->pixbuf2);
+    viewer->pixbufDeblurred = pixbuf;
+    gtk_image_set_from_pixbuf(GTK_IMAGE(viewer->imageDeblurred), viewer->pixbufDeblurred);
     //delete[] buffer;
 }
 
@@ -136,67 +120,54 @@ unsigned char* ImageViewer::convertToRGBBuffer(const bitmap_image& image) {
     return buffer;
 }
 
-void ImageViewer::deconvolveImage(GtkWidget* widget, gpointer data) {
-    ImageViewer* viewer = static_cast<ImageViewer*>(data);
-    if (!viewer->bitmapImage.data()) {
-        GtkWidget* infoDialog = gtk_message_dialog_new(GTK_WINDOW(viewer->window), GTK_DIALOG_MODAL,
-                                                       GTK_MESSAGE_INFO, GTK_BUTTONS_OK,
-                                                       "Please open an image first!");
-        gtk_dialog_run(GTK_DIALOG(infoDialog));
-        gtk_widget_destroy(infoDialog);
-        return;
+    void ImageViewer::activate(GtkApplication* app, gpointer user_data) {
+        ImageViewer* viewer = static_cast<ImageViewer*>(user_data);
+        viewer->window = gtk_application_window_new(app);
+        gtk_window_set_title(GTK_WINDOW(viewer->window), "Image Viewer");
+        gtk_window_set_default_size(GTK_WINDOW(viewer->window), 800, 400);
+
+        GtkWidget* box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 10);
+        gtk_container_add(GTK_CONTAINER(viewer->window), box);
+
+        GtkWidget* imageBox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+        GtkWidget* controlBox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
+        gtk_box_pack_start(GTK_BOX(box), imageBox, TRUE, TRUE, 0);
+        gtk_box_pack_start(GTK_BOX(box), controlBox, FALSE, FALSE, 0);
+
+        viewer->imageOriginal = gtk_image_new();
+        viewer->imageBlurred = gtk_image_new();
+        viewer->imageDeblurred = gtk_image_new();
+        gtk_box_pack_start(GTK_BOX(imageBox), viewer->imageOriginal, TRUE, TRUE, 0);
+        gtk_box_pack_start(GTK_BOX(imageBox), viewer->imageBlurred, TRUE, TRUE, 0);
+        gtk_box_pack_start(GTK_BOX(imageBox), viewer->imageDeblurred, TRUE, TRUE, 0);
+
+        GtkWidget* openButton = gtk_button_new_with_label("Open Image");
+        g_signal_connect(openButton, "clicked", G_CALLBACK(ImageViewer::openImage), viewer);
+        gtk_box_pack_start(GTK_BOX(controlBox), openButton, FALSE, FALSE, 0);
+
+        GtkWidget* blurLabel = gtk_label_new("Select Blur Type:");
+        gtk_box_pack_start(GTK_BOX(controlBox), blurLabel, FALSE, FALSE, 0);
+
+        GtkWidget* blurComboBox = gtk_combo_box_text_new();
+        viewer->blurComboBox = blurComboBox;
+        gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(blurComboBox), "Gaussian");
+        gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(blurComboBox), "Box");
+        gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(blurComboBox), "Motion");
+        gtk_combo_box_set_active(GTK_COMBO_BOX(blurComboBox), 0);
+        g_signal_connect(blurComboBox, "changed", G_CALLBACK(ImageViewer::MenuChanged), viewer);
+        gtk_box_pack_start(GTK_BOX(controlBox), blurComboBox, FALSE, FALSE, 0);
+
+        GtkWidget* noiseLabel = gtk_label_new("Select Noise Type:");
+        gtk_box_pack_start(GTK_BOX(controlBox), noiseLabel, FALSE, FALSE, 0);
+
+        GtkWidget* noiseComboBox = gtk_combo_box_text_new();
+        viewer->noiseComboBox = noiseComboBox;
+        gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(noiseComboBox), "None");
+        gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(noiseComboBox), "Gaussian");
+        gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(noiseComboBox), "Salt and Pepper");
+        gtk_combo_box_set_active(GTK_COMBO_BOX(noiseComboBox), 0);
+        g_signal_connect(noiseComboBox, "changed", G_CALLBACK(ImageViewer::MenuChanged), viewer);
+        gtk_box_pack_start(GTK_BOX(controlBox), noiseComboBox, FALSE, FALSE, 0);
+
+        gtk_widget_show_all(viewer->window);
     }
-
-
-    auto x = Deconvolver(viewer->kernel, viewer->bitmapImage);
-    x.deconvolve(3);
-    bitmap_image restoredImage = x.image;
-
-
-    // Create a GdkPixbuf from the restored image
-    unsigned char* buffer = convertToRGBBuffer(restoredImage);
-    GdkPixbuf* pixbuf = gdk_pixbuf_new_from_data(buffer, GDK_COLORSPACE_RGB, FALSE, 8, restoredImage.width(),
-                                                 restoredImage.height(), restoredImage.width() *3, nullptr, nullptr);
-    viewer->pixbuf2 = pixbuf;
-    gtk_image_set_from_pixbuf(GTK_IMAGE(viewer->image2), pixbuf);
-
-    // Clean up memory
-    delete[] buffer;
-    restoredImage.clear();
-}
-
-void ImageViewer::activate(GtkApplication* app, gpointer user_data) {
-    ImageViewer* viewer = static_cast<ImageViewer*>(user_data);
-    viewer->window = gtk_application_window_new(app);
-    gtk_window_set_title(GTK_WINDOW(viewer->window), "Image Viewer");
-    gtk_window_set_default_size(GTK_WINDOW(viewer->window), 800, 400);
-
-    GtkWidget* box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 10);
-    gtk_container_add(GTK_CONTAINER(viewer->window), box);
-
-    GtkWidget* imageBox1 = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
-    GtkWidget* imageBox2 = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
-    GtkWidget* controlBox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
-    gtk_box_pack_start(GTK_BOX(box), imageBox1, TRUE, TRUE, 0);
-    gtk_box_pack_start(GTK_BOX(box), imageBox2, TRUE, TRUE, 0);
-    gtk_box_pack_start(GTK_BOX(box), controlBox, FALSE, FALSE, 0);
-
-    viewer->image1 = gtk_image_new();
-    viewer->image2 = gtk_image_new();
-    gtk_box_pack_start(GTK_BOX(imageBox1), viewer->image1, TRUE, TRUE, 0);
-    gtk_box_pack_start(GTK_BOX(imageBox2), viewer->image2, TRUE, TRUE, 0);
-
-    GtkWidget* openButton = gtk_button_new_with_label("Open Image");
-    g_signal_connect(openButton, "clicked", G_CALLBACK(ImageViewer::openImage), viewer);
-    gtk_box_pack_start(GTK_BOX(controlBox), openButton, FALSE, FALSE, 0);
-
-    GtkWidget* blurComboBox = gtk_combo_box_text_new();
-    gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(blurComboBox), "Gaussian");
-    gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(blurComboBox), "Box");
-    gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(blurComboBox), "Motion");
-    gtk_combo_box_set_active(GTK_COMBO_BOX(blurComboBox), 0);
-    g_signal_connect(blurComboBox, "changed", G_CALLBACK(ImageViewer::blurTypeChanged), viewer);
-    gtk_box_pack_start(GTK_BOX(controlBox), blurComboBox, FALSE, FALSE, 0);
-
-    gtk_widget_show_all(viewer->window);
-}

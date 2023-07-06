@@ -13,7 +13,7 @@
 class ImageBlurrer {
 public:
     enum BlurType { GAUSSIAN, BOX, MOTION };
-    enum NoiseType { SALT_AND_PEPPER, GAUSS};
+    enum NoiseType { SALT_AND_PEPPER, GAUSS, NONE};
 
     ImageBlurrer(BlurType type, int kernelSize, double sigma = 0.0, double angle = 0.0);
 
