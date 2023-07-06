@@ -18,6 +18,7 @@ public:
     ImageBlurrer(BlurType type, int kernelSize, double sigma = 0.0, double angle = 0.0);
 
     void loadImage(const std::string& filePath);
+    void loadImage(const bitmap_image& image);
     void saveImage(const std::string& filePath);
     void blurImage();
     void addNoise(double mean, double stddev);

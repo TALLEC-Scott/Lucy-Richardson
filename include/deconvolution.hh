@@ -15,13 +15,14 @@ public:
 
 // Load the image
     void loadImage(const std::string& filePath);
-    // Save the image
+    void loadImaged(const bitmap_image& image);
+
+        // Save the image
     void saveImage(const std::string& filePath);
     // Perform deconvolution
     bitmap_image getImage() { return image; }
     void deconvolve(int iterations);
     // Compute the difference between the original and deconvolved image
-
 
     bitmap_image image;
 private:

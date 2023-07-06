@@ -3,9 +3,13 @@
 
 Deconvolver::Deconvolver(const std::vector<std::vector<double>>& kernel) : kernel(kernel) {}
 
+void Deconvolver::loadImaged(const bitmap_image& input) {
+    this->image = input;
+}
 void Deconvolver::loadImage(const std::string& filePath) {
     image = bitmap_image(filePath);
 }
+
 
 void Deconvolver::saveImage(const std::string& filePath) {
     image.save_image(filePath);

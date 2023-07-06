@@ -21,6 +21,8 @@ void ImageBlurrer::loadImage(const std::string& filePath) {
     image = bitmap_image(filePath);
 }
 
+
+
 void ImageBlurrer::saveImage(const std::string& filePath) {
     image.save_image(filePath);
 }
@@ -176,4 +178,8 @@ void ImageBlurrer::addNoise(double mean, double stddev, NoiseType type) {
         default:
             throw std::invalid_argument("Invalid noise type.");
     }
+}
+
+void ImageBlurrer::loadImage(const bitmap_image &image) {
+    this->image = image;
 }
