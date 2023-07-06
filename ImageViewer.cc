@@ -98,12 +98,12 @@ void ImageViewer::MenuChanged(GtkComboBox* comboBox, gpointer data) {
         deconvolver.deconvolveAuto(viewer->autoIterations, 0.001);
     else
         deconvolver.deconvolve(viewer->numberOfIterations);
-    bitmap_image restoredImage = deconvolver.image;
+    viewer->deblurredImage = deconvolver.image;
 
     // Create a GdkPixbuf from the restored image
-    unsigned char* buffer = convertToRGBBuffer(restoredImage);
-    GdkPixbuf* pixbuf = gdk_pixbuf_new_from_data(buffer, GDK_COLORSPACE_RGB, FALSE, 8, restoredImage.width(),
-                                                 restoredImage.height(), restoredImage.width() *3, nullptr, nullptr);
+    unsigned char* buffer = convertToRGBBuffer(viewer->deblurredImage);
+    GdkPixbuf* pixbuf = gdk_pixbuf_new_from_data(buffer, GDK_COLORSPACE_RGB, FALSE, 8, viewer->deblurredImage.width(),
+                                                 viewer->deblurredImage.height(), viewer->deblurredImage.width() *3, nullptr, nullptr);
     viewer->pixbufDeblurred = pixbuf;
     gtk_image_set_from_pixbuf(GTK_IMAGE(viewer->imageDeblurred), viewer->pixbufDeblurred);
     //delete[] buffer;
@@ -127,6 +127,25 @@ void ImageViewer::iterationsChanged(GtkRange* range, gpointer data) {
         return G_SOURCE_REMOVE;
     }, viewer);
 }
+
+void ImageViewer::saveImage(GtkWidget* widget, gpointer data) {
+    ImageViewer* viewer = static_cast<ImageViewer*>(data);
+    // Perform the image saving logic here
+
+    // For example, you can use GTK file chooser dialog to prompt the user for the save location
+    GtkWidget* dialog = gtk_file_chooser_dialog_new("Save Image", GTK_WINDOW(viewer->window), GTK_FILE_CHOOSER_ACTION_SAVE,
+                                                    "Cancel", GTK_RESPONSE_CANCEL, "Save", GTK_RESPONSE_ACCEPT, NULL);
+    gtk_file_chooser_set_do_overwrite_confirmation(GTK_FILE_CHOOSER(dialog), TRUE);
+
+    if (gtk_dialog_run(GTK_DIALOG(dialog)) == GTK_RESPONSE_ACCEPT) {
+        char* filename = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(dialog));
+        //save the image
+        viewer->deblurredImage.save_image(filename);
+    }
+
+    gtk_widget_destroy(dialog);
+}
+
 
 unsigned char* ImageViewer::convertToRGBBuffer(const bitmap_image& image) {
     const unsigned int width = image.width();
@@ -219,6 +238,10 @@ unsigned char* ImageViewer::convertToRGBBuffer(const bitmap_image& image) {
         g_signal_connect(iterationsSlider, "value-changed", G_CALLBACK(ImageViewer::iterationsChanged), viewer);
         gtk_box_pack_start(GTK_BOX(controlBox), iterationsSlider, FALSE, FALSE, 0);
 
+        // Save button
+        GtkWidget* saveButton = gtk_button_new_with_label("Save Image");
+        g_signal_connect(saveButton, "clicked", G_CALLBACK(ImageViewer::saveImage), viewer);
+        gtk_box_pack_start(GTK_BOX(controlBox), saveButton, FALSE, FALSE, 0);
 
         gtk_widget_show_all(viewer->window);
     }

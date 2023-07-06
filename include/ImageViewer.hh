@@ -27,6 +27,8 @@ private:
     std::string imagePath;
     ImageBlurrer::BlurType blurType = ImageBlurrer::GAUSSIAN;
     bitmap_image bitmapImage;
+    bitmap_image blurredImage;
+    bitmap_image deblurredImage;
     std::vector<std::vector<double>> kernel;
     GtkWidget* noiseComboBox;
     GtkWidget* blurComboBox;
@@ -42,6 +44,8 @@ private:
 
     static void autoConvolution(GtkWidget *widget, gpointer data);
     static void iterationsChanged(GtkRange *range, gpointer data);
+
+    static void saveImage(GtkWidget *widget, gpointer data);
 };
 
 #endif  // IMAGE_VIEWER_H
