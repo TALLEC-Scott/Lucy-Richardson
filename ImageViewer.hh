@@ -3,6 +3,7 @@
 
 #include <gtk/gtk.h>
 #include <bitmap_image.hpp>
+#include "blur_image.hh"
 
 class ImageViewer {
 public:
@@ -19,8 +20,12 @@ private:
     GdkPixbuf* pixbuf;
     std::string imagePath;
     bitmap_image bitmapImage;
+    std::vector<std::vector<double>> kernel;
+
 
     static unsigned char *convertToRGBBuffer(const bitmap_image &image);
+
+    ImageBlurrer::BlurType blurType;
 };
 
 #endif  // IMAGE_VIEWER_H
