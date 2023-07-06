@@ -19,5 +19,5 @@ link_libraries(${GTK3_LIBRARIES})
 
 
 # Add all your .cc files here
-add_executable(Lucy main.cpp  blur_image.cc DeconvolutionUtils.cc  deconvolution.cc ImageViewer.cc ImageViewer.hh)
+add_executable(Lucy main.cpp  blur_image.cc DeconvolutionUtils.cc  deconvolution.cc ImageViewer.cc)
 target_link_libraries(Lucy ${GTK3_LIBRARIES})
