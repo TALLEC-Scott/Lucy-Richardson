@@ -39,3 +39,37 @@ void DeconvolutionUtils::applyGrayscalePrior(bitmap_image& differenceImage) {
         }
     }
 }
+
+std::vector<std::vector<double>> DeconvolutionUtils::computeGradientX(const std::vector<std::vector<double>> &image) {
+    std::vector<std::vector<double>> gradientX(image.size(), std::vector<double>(image[0].size(), 0.0));
+
+    for (std::size_t x = 0; x < image.size(); x++) {
+        for (std::size_t y = 0; y < image[x].size(); y++) {
+            if (x == 0)
+                gradientX[x][y] = image[x + 1][y] - image[x][y];
+            else if (x == image.size() - 1)
+                gradientX[x][y] = image[x][y] - image[x - 1][y];
+            else
+                gradientX[x][y] = (image[x + 1][y] - image[x - 1][y]) / 2.0;
+        }
+    }
+
+    return gradientX;
+}
+
+std::vector<std::vector<double>> DeconvolutionUtils::computeGradientY(const std::vector<std::vector<double>> &image) {
+    std::vector<std::vector<double>> gradientY(image.size(), std::vector<double>(image[0].size(), 0.0));
+
+    for (std::size_t x = 0; x < image.size(); x++) {
+        for (std::size_t y = 0; y < image[x].size(); y++) {
+            if (y == 0)
+                gradientY[x][y] = image[x][y + 1] - image[x][y];
+            else if (y == image[x].size() - 1)
+                gradientY[x][y] = image[x][y] - image[x][y - 1];
+            else
+                gradientY[x][y] = (image[x][y + 1] - image[x][y - 1]) / 2.0;
+        }
+    }
+
+    return gradientY;
+}

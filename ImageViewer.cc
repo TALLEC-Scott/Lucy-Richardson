@@ -98,6 +98,8 @@ void ImageViewer::MenuChanged(GtkComboBox* comboBox, gpointer data) {
         deconvolver.deconvolveAuto(viewer->numberOfIterations, 0.1);
     else
         deconvolver.deconvolve(viewer->numberOfIterations);
+        //deconvolver.deconvolveTV(viewer->numberOfIterations, 0.1, 0.001, 1);
+        //Strange results here, I need to check the code
     viewer->deblurredImage = deconvolver.image;
 
     // Create a GdkPixbuf from the restored image

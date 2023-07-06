@@ -24,6 +24,8 @@ public:
     void deconvolve(int iterations);
     void deconvolveAuto(int iterations, double lambda);
     // Compute the difference between the original and deconvolved image
+    void deconvolveTV(int iterations, double lambda, double alpha, double scalingFactor);
+
 
     bitmap_image image;
 private:
