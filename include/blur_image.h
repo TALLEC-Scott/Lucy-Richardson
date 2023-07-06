@@ -1,6 +1,5 @@
 #include "bitmap_image.hpp"
 #include <vector>
-#include "bitmap_image.hpp"
 #include <iostream>
 #include <map>
 #include <random>
