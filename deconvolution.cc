@@ -93,3 +93,13 @@ void Deconvolver::deconvolve(int iterations) {
         }
     }
 }
+
+Deconvolver::Deconvolver(const std::vector<std::vector<double>> &kernel, bitmap_image image) {
+    this->kernel = kernel;
+    this->image = image;
+}
+
+Deconvolver::Deconvolver(const std::vector<std::vector<double>> &kernel, const std::string &filePath) {
+    this->kernel = kernel;
+    loadImage(filePath);
+}

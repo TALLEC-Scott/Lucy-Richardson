@@ -1,3 +1,5 @@
+#pragma once
+
 #include "bitmap_image.hpp"
 #include <vector>
 #include <cmath>
@@ -6,7 +8,12 @@ class Deconvolver {
 public:
     // Constructor to initialize the parameters
     Deconvolver(const std::vector<std::vector<double>>& kernel);
-    // Load the image
+
+    Deconvolver(const std::vector<std::vector<double>>& kernel, bitmap_image image);
+
+    Deconvolver(const std::vector<std::vector<double>> &kernel, const std::string &filePath);
+
+// Load the image
     void loadImage(const std::string& filePath);
     // Save the image
     void saveImage(const std::string& filePath);
@@ -16,8 +23,8 @@ public:
     // Compute the difference between the original and deconvolved image
 
 
-private:
     bitmap_image image;
+private:
     std::vector<std::vector<double>> kernel;
     std::vector<std::vector<double>> convolve(const std::vector<std::vector<double>>& image, const std::vector<std::vector<double>>& kernel);
 

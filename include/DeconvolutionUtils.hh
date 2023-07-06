@@ -7,5 +7,7 @@
 class DeconvolutionUtils {
 public:
     static void computeDifference(const bitmap_image& blurredImage, const bitmap_image& unblurredImage, bitmap_image& differenceImage);
+
+    static void applyGrayscalePrior(bitmap_image &differenceImage);
 };
 

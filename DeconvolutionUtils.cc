@@ -39,11 +39,3 @@ void DeconvolutionUtils::applyGrayscalePrior(bitmap_image& differenceImage) {
         }
     }
 }
-
-void
-DeconvolutionUtils::computeGrayscaleDifference(const bitmap_image &blurredImage, const bitmap_image &unblurredImage,
-                                               bitmap_image &differenceImage) {
-
-
-
-}
