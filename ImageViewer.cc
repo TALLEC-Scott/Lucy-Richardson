@@ -47,7 +47,6 @@ void ImageViewer::MenuChanged(GtkComboBox* comboBox, gpointer data) {
 
     ImageViewer* viewer = static_cast<ImageViewer*>(data);
     gint active = gtk_combo_box_get_active(comboBox);
-    const gchar* activeId = gtk_combo_box_get_active_id(GTK_COMBO_BOX(comboBox));
     if (comboBox == GTK_COMBO_BOX(viewer->blurComboBox)) {
             if (active == 0) {
                 viewer->blurType = ImageBlurrer::GAUSSIAN;
@@ -109,13 +108,17 @@ void ImageViewer::autoConvolution(GtkWidget* widget, gpointer data) {
     // call the callback function from menu change
     MenuChanged(GTK_COMBO_BOX(viewer->blurComboBox), data);
 }
-
 void ImageViewer::iterationsChanged(GtkRange* range, gpointer data) {
     ImageViewer* viewer = static_cast<ImageViewer*>(data);
-    int value = static_cast<int>(gtk_range_get_value(range));
-    viewer->numberOfIterations = value;
-    // call the callback function from menu change
-    MenuChanged(GTK_COMBO_BOX(viewer->blurComboBox), data);
+    double value = gtk_range_get_value(range);
+    viewer->numberOfIterations = static_cast<int>(value);
+    g_idle_add([](gpointer data) {
+        ImageViewer* viewer = static_cast<ImageViewer*>(data);
+        // call the callback function from menu change
+        MenuChanged(GTK_COMBO_BOX(viewer->blurComboBox), data);
+
+        return G_SOURCE_REMOVE;
+    }, viewer);
 }
 
 unsigned char* ImageViewer::convertToRGBBuffer(const bitmap_image& image) {
