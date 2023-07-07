@@ -57,14 +57,22 @@ void ImageBlurrer::createBoxBlurKernel(int kernelSize) {
 }
 
 void ImageBlurrer::createMotionBlurKernel(int kernelSize, double angle) {
-    kernel = std::vector<std::vector<double>>(kernelSize, std::vector<double>(kernelSize));
+    kernel = std::vector<std::vector<double>>(kernelSize, std::vector<double>(kernelSize, 0.0));
     int center = kernelSize / 2;
     double angleInRadians = angle * M_PI / 180.0;
+
+    double cosTheta = std::cos(angleInRadians);
+    double sinTheta = std::sin(angleInRadians);
+
     for (int i = 0; i < kernelSize; i++) {
         for (int j = 0; j < kernelSize; j++) {
-            double x = i - center;
-            double y = j - center;
-            kernel[i][j] = (abs(y - x*tan(angleInRadians)) <= 0.5) ? 1.0 / kernelSize : 0.0;
+            int x = i - center;
+            int y = j - center;
+
+            double motionDistance = x * cosTheta + y * sinTheta;
+            if (motionDistance >= -0.5 && motionDistance <= 0.5) {
+                kernel[i][j] = 1.0 / kernelSize;
+            }
         }
     }
 }
