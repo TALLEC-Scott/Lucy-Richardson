@@ -211,24 +211,24 @@ void ImageBlurrer::addSpeckleNoise(double stddev) {
 }
 
 void ImageBlurrer::addPoissonNoise() {
-    std::random_device rd{};
-    std::mt19937 gen{rd()};
+    std::mt19937 generator;
+
 
     for (std::size_t x = 0; x < image.width(); x++) {
         for (std::size_t y = 0; y < image.height(); y++) {
             rgb_t color = image.get_pixel(x, y);
-            color.red = addPoissonNoiseToChannel(color.red, gen);
-            color.green = addPoissonNoiseToChannel(color.green, gen);
-            color.blue = addPoissonNoiseToChannel(color.blue, gen);
+            color.red = addPoissonNoiseToChannel(color.red, generator);
+            color.green = addPoissonNoiseToChannel(color.green, generator);
+            color.blue = addPoissonNoiseToChannel(color.blue, generator);
             image.set_pixel(x, y, color);
         }
     }
 }
 
-int ImageBlurrer::addPoissonNoiseToChannel(int value, std::mt19937& gen) {
-    std::poisson_distribution<> d{static_cast<double>(value)};
-    int noise = d(gen);
-    return std::min(255, value + noise);
+unsigned char ImageBlurrer::addPoissonNoiseToChannel(unsigned char value, std::mt19937 &gen) {
+    std::poisson_distribution<int> distribution(value);
+    int noisy_value = distribution(gen);
+    return static_cast<unsigned char>(std::min(noisy_value, 255));
 }
 
 #include <random>

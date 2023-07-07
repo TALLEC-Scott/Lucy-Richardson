@@ -44,11 +44,12 @@ private:
 
     void addPoissonNoise();
 
-    int addPoissonNoiseToChannel(int value, std::mt19937 &gen);
 
     void addSpeckleNoise(double stddev);
 
     void createIdentityKernel(int kernelSize);
+
+    unsigned char addPoissonNoiseToChannel(unsigned char value, std::mt19937 &gen);
 };
 
 
