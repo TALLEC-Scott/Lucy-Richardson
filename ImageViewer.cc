@@ -90,7 +90,7 @@ void ImageViewer::MenuChanged(GtkComboBox* comboBox, gpointer data) {
     // Here, you can use the viewer->blurType to perform the blur operation or pass it to the ImageBlurrer class
     // After blurring, update the image2 and pixbuf2 with the blurred image data
     //
-    ImageBlurrer blurrer(viewer->blurType, 7, 3.0, 90);
+    ImageBlurrer blurrer(viewer->blurType, 3, 3.0, 90);
     blurrer.loadImage(viewer->bitmapImage);
     blurrer.addNoise(0.0, 10.0, viewer->noiseType);
 
