@@ -12,11 +12,11 @@ restore the original image. The project is written in C++ and uses GTK+3 for the
 - Apply Noise
     - Gaussian Noise
     - Salt and Pepper Noise
-    - Shot Noise
     - Speckle Noise
 - Apply Lucy-Richardson Deconvolution Algorithm
     - Number of iterations
     - Tikhonov regularization or *auto-deconvolution*
+    - TV
 - Save Image
 
 ### Requirements
