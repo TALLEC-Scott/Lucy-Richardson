@@ -114,7 +114,7 @@ void ImageViewer::MenuChanged(GtkComboBox* comboBox, gpointer data) {
             deconvolver.deconvolveAuto(viewer->numberOfIterations, 0.1);
             break;
         case DeconvolutionType::RICHARDSON_LUCY_TV:
-            deconvolver.deconvolveTV(viewer->numberOfIterations, 0.1, 0.01, 1);
+            deconvolver.deconvolveTV(viewer->numberOfIterations, 1, 0.001, 1);
             break;
     }
     viewer->deblurredImage = deconvolver.image;
