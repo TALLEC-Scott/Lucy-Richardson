@@ -58,5 +58,5 @@ The main interface is shown below.
 
 ### Authors
 - [Scott TALLEC](https://github.com/TALLEC-Scott)
-- [Daniel Rosa]
+- [Daniel Rosa](https://github.com/DanielRosa73)
 
